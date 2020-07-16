@@ -1,9 +1,9 @@
 initial python3 enviroment
 pip install -r requirements.txt
 
-# Voice Service deploy
+# LineBot Service deploy
 
-部屬所有語音相關服務
+部屬line server
 
 ## git struct 
 ```
