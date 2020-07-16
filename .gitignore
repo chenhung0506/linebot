@@ -1,0 +1,5 @@
+/flask/
+logs/
+.DS_Store
+module/const.pyc
+docker/module/__pycache__/

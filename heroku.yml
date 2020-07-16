@@ -1,0 +1,18 @@
+# setup:
+#   addons:
+#     - plan: heroku-buildpack-chromedriver
+#       as: chromedriver
+#   config:
+#     S3_BUCKET: my-example-bucket
+# setup:
+#   addons:
+#     - plan: heroku-buildpack-google-chrome
+#       as: chrome
+#   config:
+#     S3_BUCKET: my-example-bucket
+build:
+  docker:
+    web: Dockerfile
+    worker: Dockerfile
+# heroku create --buildpack https://github.com/heroku/heroku-buildpack-chromedriver.git
+# heroku create --buildpack https://github.com/heroku/heroku-buildpack-google-chrome.git
