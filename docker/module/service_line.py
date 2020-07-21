@@ -44,8 +44,8 @@ class lineService(object):
         finally:
             browser.quit()
 
-    def getForecast(self):
-        url='https://www.cwb.gov.tw/V8/C/W/County/County.html?CID=65'
+    def getForecast(self, CID):
+        url='https://www.cwb.gov.tw/V8/C/W/County/County.html?CID='+CID
         response=''
         try:
             # soup = self.getSoupbyApiChrome(url)
@@ -62,8 +62,8 @@ class lineService(object):
             log.error(utils.except_raise(e))
         return response
 
-    def getWeather(self):
-        url='https://www.cwb.gov.tw/V8/C/W/County/County.html?CID=65'
+    def getWeather(self, CID):
+        url='https://www.cwb.gov.tw/V8/C/W/County/County.html?CID='+CID
         response=''
         try:
             # soup = self.getSoupbyApiChrome(url)

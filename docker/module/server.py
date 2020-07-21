@@ -10,6 +10,7 @@ import controller_line
 import flask_restful
 import utils
 import service_heroku
+import dao_test
 from flask_restful import Api
 from flask_restful import Resource
 from datetime import datetime
@@ -34,3 +35,5 @@ if __name__=="__main__":
 
     # sched.add_job(controller.transmitProcess, CronTrigger.from_crontab(const.TRANSMIT_CRON), [None])
     app.run(host="0.0.0.0", port=const.PORT, debug=True, use_reloader=False)
+    # dao_test.insertTest()
+    # dao_test.queryTest()

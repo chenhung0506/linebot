@@ -18,6 +18,7 @@ import pymysql
 import service
 import utils
 import errno
+import dao
 import tempfile
 import service_line
 from argparse import ArgumentParser
@@ -109,9 +110,63 @@ def make_static_tmp_dir():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
     text = event.message.text
-    log.info('text:' + text)
+    log.info('user message:' + str(event))
 
-    if text == 'profile':
+    log.info('userId: ' + str(event.source.user_id))
+
+    data=[]
+    try:
+        conn = pymysql.Connect(host='us-cdbr-east-02.cleardb.com',user='bdef9ef0984947',passwd='0b65d70f',db='heroku_d38736f240fb4e6',charset='utf8')
+        data = dao.Database(conn).queryConversation( str(event.source.user_id) )
+    except Exception as e:
+        log.info("queryConversation occured some error: "+utils.except_raise(e))
+    finally:
+        conn.close()
+    # if len(data) == 1:
+    #     if data[0][1] == '':
+
+    log.info(len(data))
+
+
+    try:
+        conn = pymysql.Connect(host='us-cdbr-east-02.cleardb.com',user='bdef9ef0984947',passwd='0b65d70f',db='heroku_d38736f240fb4e6',charset='utf8')
+        dao.Database(conn).insertConversation( str(event.source.user_id), text )
+    except Exception as e:
+        log.info("insertConversation occured some error: "+utils.except_raise(e))
+    finally:
+        conn.close()
+    if text == 'tool':
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(
+                text='選擇功能:',
+                quick_reply=QuickReply(
+                    items=[
+                        QuickReplyButton(
+                            action=PostbackAction(label="今天天氣", text="今天天氣", data="weather")
+                        ),
+                        QuickReplyButton(
+                            action=PostbackAction(label="一週天氣", text="一週天氣", data="forecast")
+                        ),
+                        QuickReplyButton(
+                            action=PostbackAction(label="寄信", text="寄信", data="sendemail")
+                        ),
+                        QuickReplyButton(
+                            action=DatetimePickerAction(label="label3",
+                                                        data="data3",
+                                                        mode="date")
+                        ),
+                        QuickReplyButton(
+                            action=CameraAction(label="label4")
+                        ),
+                        QuickReplyButton(
+                            action=CameraRollAction(label="label5",data="data1")
+                        ),
+                        QuickReplyButton(
+                            action=LocationAction(label="label6")
+                        ),
+                    ])))
+    elif text == 'profile':
         if isinstance(event.source, SourceUser):
             profile = line_bot_api.get_profile(event.source.user_id)
             line_bot_api.reply_message(
@@ -196,10 +251,21 @@ def handle_text_message(event):
         template_message = TemplateSendMessage(
             alt_text='Confirm alt text', template=confirm_template)
         line_bot_api.reply_message(event.reply_token, template_message)
-    elif text == 'buttons':
+    elif text == 'chlin':
+        buttons_template = ButtonsTemplate(
+            title='chlin album', text='Hello, my buttons', actions=[
+                URIAction(label='Go to resume', uri='https://resume-chlin.herokuapp.com'),
+                URIAction(label='Go to avalon', uri='https://resume-chlin.herokuapp.com'),
+                URIAction(label='Go to iVoting', uri='https://resume-chlin.herokuapp.com'),
+            ])
+        template_message = TemplateSendMessage(
+            alt_text='Buttons alt text', template=buttons_template)
+        line_bot_api.reply_message(event.reply_token, template_message)
+
+    elif text == '功能' or text == '功能區' or text == 'tool':
+        log.info(':::' + str(event.source.user_id))
         buttons_template = ButtonsTemplate(
             title='My buttons sample', text='Hello, my buttons', actions=[
-                URIAction(label='Go to line.me', uri='https://line.me'),
                 PostbackAction(label='ping', data='ping'),
                 PostbackAction(label='ping with text', data='ping', text='ping'),
                 MessageAction(label='Translate Rice', text='米')
@@ -539,15 +605,9 @@ def handle_text_message(event):
         else:
             messages = [TextSendMessage(text='available: false')]
         line_bot_api.reply_message(event.reply_token, messages)
-    elif text == '天氣':
-        line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text=service_line.lineService().getWeather()))
-    elif text == '天氣預報':
-        line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text=service_line.lineService().getForecast()))
-    else:
-        line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text=event.message.text))
+    # else:
+    #     line_bot_api.reply_message(
+    #         event.reply_token, TextSendMessage(text=event.message.text))
 
 
 @handler.add(MessageEvent, message=LocationMessage)
@@ -645,6 +705,16 @@ def handle_leave():
 
 @handler.add(PostbackEvent)
 def handle_postback(event):
+    regResult=re.search(r"(.*):{1}(weather|forecast{1})$",event.postback.data)
+    if regResult != None and regResult.group(2) == 'weather':
+        reply_txt=service_line.lineService().getWeather(regResult.group(1))
+        line_bot_api.reply_message(
+            event.reply_token, TextSendMessage(text=reply_txt))
+    elif regResult != None and regResult.group(2) == 'forecast':
+        reply_txt=service_line.lineService().getForecast(regResult.group(1))
+        line_bot_api.reply_message(
+            event.reply_token, TextSendMessage(text=reply_txt))
+
     if event.postback.data == 'ping':
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(text='pong'))
@@ -654,8 +724,30 @@ def handle_postback(event):
     elif event.postback.data == 'date_postback':
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(text=event.postback.params['date']))
-
-
+    elif event.postback.data == 'weather' or event.postback.data=='forecast':
+        # 65台北 68桃園 10018新竹市 66台中 10002宜蘭
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(
+                text='選擇城市',
+                quick_reply=QuickReply(
+                    items=[
+                        QuickReplyButton(
+                            action=PostbackAction(label="台北", data="65:" + event.postback.data , text="台北")
+                        ),
+                        QuickReplyButton(
+                            action=PostbackAction(label="桃園", data="68:" + event.postback.data , text="桃園")
+                        ),
+                        QuickReplyButton(
+                            action=PostbackAction(label="新竹", data="10018:" + event.postback.data , text="新竹")
+                        ),
+                        QuickReplyButton(
+                            action=PostbackAction(label="台中", data="66:" + event.postback.data , text="台中")
+                        ),
+                        QuickReplyButton(
+                            action=PostbackAction(label="宜蘭", data="10002:" + event.postback.data , text="宜蘭")
+                        )
+                    ])))
 @handler.add(BeaconEvent)
 def handle_beacon(event):
     line_bot_api.reply_message(
@@ -678,3 +770,31 @@ def handle_member_joined(event):
 def handle_member_left(event):
     log.info("Got memberLeft event")
 
+# def quick_reply(event):
+#     line_bot_api.reply_message(
+#     event.reply_token,
+#     TextSendMessage(
+#         text='Quick reply',
+#         quick_reply=QuickReply(
+#             items=[
+#                 QuickReplyButton(
+#                     action=PostbackAction(label="label1", data="data1")
+#                 ),
+#                 QuickReplyButton(
+#                     action=MessageAction(label="label2", text="text2")
+#                 ),
+#                 QuickReplyButton(
+#                     action=DatetimePickerAction(label="label3",
+#                                                 data="data3",
+#                                                 mode="date")
+#                 ),
+#                 QuickReplyButton(
+#                     action=CameraAction(label="label4")
+#                 ),
+#                 QuickReplyButton(
+#                     action=CameraRollAction(label="label5")
+#                 ),
+#                 QuickReplyButton(
+#                     action=LocationAction(label="label6")
+#                 ),
+#             ])))

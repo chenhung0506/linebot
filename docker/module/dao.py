@@ -1,4 +1,5 @@
 import log
+import utils
 
 log = log.logging.getLogger(__name__)
 
@@ -6,31 +7,48 @@ log = log.logging.getLogger(__name__)
 class Database(object):
     def __init__(self, conn):
         self.conn = conn
-    def queryTransmit(self):
+    def queryConversation(self,userId):
         cursor = self.conn.cursor()
         try:
-            cursor.execute("SELECT * from transmit_record;")
-            data = cursor.fetchall()
-            return data
+            sql = "SELECT * FROM  heroku_d38736f240fb4e6.CONVERSATION WHERE USER_ID = %s ;"
+            val = (userId)
+            cursor.execute(sql, val)
+            return cursor.fetchall()
         except Exception as e:
-            raise e
+            log.error(utils.except_raise(e))
+            raise Exception(e)
     
-    def insertTransmit(self,dataForRakuten):
+    def insertConversation(self, userId, conversation):
         cursor = self.conn.cursor()
         try:
-            for record in dataForRakuten['data']:
-                sql = "INSERT INTO db.transmit_record (session_id, transmit_date, transmit_status) \
-    	  	            VALUES ( %s, CURDATE(), %s)ON DUPLICATE KEY UPDATE transmit_date=CURDATE(), transmit_status= %s ;"
-                val = (record['session_id'], str(record['transmit_status']), str(record['transmit_status']))
-
-                try:
-                    cursor.execute(sql, val)
-                except Exception as e:
-                    log.info("query '{}' with params {} failed with {}".format(sql, val, e))
-                    log.info( "\n executed sql: " + cursor._executed)
-                    self.conn.rollback()
-                # if cursor.rowcount != 1:
-                log.info("insert success: " + record['session_id'])
-                self.conn.commit()
+            sql = "INSERT INTO heroku_d38736f240fb4e6.CONVERSATION (USER_ID,CONVERSATION) values( %s, %s ) ON DUPLICATE KEY UPDATE CONVERSATION=(%s);"
+            val = (userId, conversation, conversation)
+            try:
+                cursor.execute(sql, val)
+            except Exception as e:
+                log.info("insert '{}' with params {} failed with {}".format(sql, val, e))
+                log.info( "\n executed sql: " + cursor._executed)
+                self.conn.rollback()
+            log.info("insert success userId: " + userId + "conversation: " + conversation)
+            self.conn.commit()
+            # if cursor.rowcount == 1 and cursor.rowcount == 2:
+            #     log.info('insert fail')
+            #     self.conn.rollback()
         except Exception as e:
             raise str(e) 
+
+
+    # create table Community.USER_(
+    #     U_ID INT NOT NULL AUTO_INCREMENT,
+    #     ACCOUNT VARCHAR(100) NOT NULL,
+    #     PASSWORD VARCHAR(100) NOT NULL,
+    #     PASSWORD_HINT VARCHAR(100) NOT NULL,
+    #     NAME VARCHAR(100) NOT NULL,
+    #     JOIN_DATE DATE,
+    #     PRIMARY KEY ( U_ID )
+    # );
+    # create table Community.USER_ROLE(
+    #     USER_ID INT NOT NULL,
+    #     ROLE_ID VARCHAR(10) NOT NULL,
+    #     PRIMARY KEY ( USER_ID, ROLE_ID )
+    # );

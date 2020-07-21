@@ -71,7 +71,7 @@ class Weather(Resource):
         return {
             'status': 200,
             'message': 'success',
-            'result': lineService.getWeather()
+            'result': lineService.getWeather('65')
         }, 200
 
 class Forecast(Resource):
@@ -81,7 +81,7 @@ class Forecast(Resource):
         return {
             'status': 200,
             'message': 'success',
-            'result': lineService.getForecast()
+            'result': lineService.getForecast('65')
         }, 200
 
 
