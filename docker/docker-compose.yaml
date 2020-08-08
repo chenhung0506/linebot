@@ -28,9 +28,13 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    # networks:
-    #   - docker-compose-base_default
   # selenium:
   #   image: selenium/standalone-chrome
   #   ports:
   #   - 4444:4444
+
+networks:
+  default:
+    external:
+      name : ${DOCKER_NETWORK}
+

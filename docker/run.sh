@@ -11,11 +11,12 @@ set -o allexport
 source dev.env
 set +o allexport
 
-echo "[ -------- 1.   build and run        -------- ]"
-echo "[ -------- 2.   pull image and run   -------- ]"
-echo "[ -------- 3.   run module           -------- ]"
-echo "[ -------- 4.   stop module          -------- ]"
-echo "[ -------- 5.   save image           -------- ]"
+echo "[ -------- 0.   build/push base image -------- ]"
+echo "[ -------- 1.   build and run         -------- ]"
+echo "[ -------- 2.   pull image and run    -------- ]"
+echo "[ -------- 3.   run module            -------- ]"
+echo "[ -------- 4.   stop module           -------- ]"
+echo "[ -------- 5.   save image            -------- ]"
 
 if [ $# -eq 1 ]; then
     mode=$1
@@ -27,7 +28,9 @@ echo "mode:"$mode
 CMD=""
 
 
-if [ $mode == "1" ]; then
+if [ $mode == "0" ]; then
+    cmd = ('docker build -t python-with-chrome -f ./build_from_image/Dockerfile .' 'docker tag python-with-chrome:latest chenhung0506/python-with-chrome' 'docker push chenhung0506/python-with-chrome:latest')
+elif [ $mode == "1" ]; then
     echo "[ -------- 1.   build and run        -------- ]"
     build
     imagePull
