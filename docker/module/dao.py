@@ -37,6 +37,33 @@ class Database(object):
         except Exception as e:
             raise str(e) 
 
+    def insertAirBnb(self, bnb_data):
+        cursor = self.conn.cursor()
+        try:
+            sql = "INSERT INTO heroku_d38736f240fb4e6.AIRBNB (ID, BNB_DATA) values( 1, %s ) ON DUPLICATE KEY UPDATE BNB_DATA=( %s );"
+            val = (bnb_data, bnb_data)
+            try:
+                cursor.execute(sql, val)
+            except Exception as e:
+                log.info("insert '{}' with params {} failed with {}".format(sql, val, e))
+                log.info( "\n executed sql: " + cursor._executed)
+                self.conn.rollback()
+            log.info("insert success bnb_data: " + bnb_data)
+            self.conn.commit()
+            return cursor.rowcount
+        except Exception as e:
+            raise str(e) 
+
+    def queryAirBnb(self, ID):
+        cursor = self.conn.cursor()
+        try:
+            sql = "SELECT * FROM  heroku_d38736f240fb4e6.AIRBNB WHERE ID = %s ;"
+            val = (ID)
+            cursor.execute(sql, val)
+            return cursor.fetchall()
+        except Exception as e:
+            log.error(utils.except_raise(e))
+            raise Exception(e)
 
     # create table Community.USER_(
     #     U_ID INT NOT NULL AUTO_INCREMENT,
@@ -52,3 +79,11 @@ class Database(object):
     #     ROLE_ID VARCHAR(10) NOT NULL,
     #     PRIMARY KEY ( USER_ID, ROLE_ID )
     # );
+
+
+    # create table heroku_d38736f240fb4e6.AIRBNB(
+    #      ID INT NOT NULL AUTO_INCREMENT,
+    #      BNB_DATA VARCHAR(10000) NOT NULL,
+    #      PRIMARY KEY ( ID )
+    # );
+     

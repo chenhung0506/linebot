@@ -35,3 +35,7 @@ AVALON_HEALTH_API=os.environ.get('AVALON_HEALTH_API', os.getenv('AVALON_HEALTH_A
 CHANNEL_SECRET=os.environ.get('CHANNEL_SECRET', os.getenv('CHANNEL_SECRET'))
 CHANNEL_TOKEN=os.environ.get('CHANNEL_TOKEN', os.getenv('CHANNEL_TOKEN'))
 CHROMEDRIVER_PATH=os.environ.get('CHROMEDRIVER_PATH', os.getenv('CHROMEDRIVER_PATH'))
+DB_HOST=os.environ.get('DB_HOST', os.getenv('DB_HOST'))
+DB_ACCOUNT=os.environ.get('DB_ACCOUNT', os.getenv('DB_ACCOUNT'))
+DB_PASSWORD=os.environ.get('DB_PASSWORD', os.getenv('DB_PASSWORD'))
+DB_DB=os.environ.get('DB_DB', os.getenv('DB_DB'))

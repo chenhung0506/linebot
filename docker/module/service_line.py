@@ -10,6 +10,7 @@ import datetime
 import log as logpy
 import re
 import utils
+import requests
 
 log = logpy.logging.getLogger(__name__)
 
@@ -77,3 +78,26 @@ class lineService(object):
         except Exception as e:
             log.error(utils.except_raise(e))
         return response
+    
+    def getBnbRoomStatus(self, bnbNameList, bnbUrlList):
+        resultList=[]
+        i=0
+        for bnbUrl in bnbUrlList:
+            resultStr=''
+            resultStr += str(bnbNameList[i]) + "\n"
+            i+=1
+            response = requests.get(bnbUrl)
+            if response.status_code == 200:
+                bnbStrList=str(response.text).split("\n")
+                for bnbStr in reversed(bnbStrList):
+                    regResult=re.search(r"^(SUMMARY:){1}(.*)$",bnbStr)
+                    if regResult != None:
+                        resultStr += regResult.group(2) + '\n'
+                    regResult=re.search(r"^(DTSTART;VALUE=DATE:){1}(.*)$",bnbStr)
+                    if regResult != None:
+                        resultStr += '開始:' + regResult.group(2) + '\n'
+                    regResult=re.search(r"^(DTEND;VALUE=DATE:){1}(.*)$",bnbStr)
+                    if regResult != None:
+                        resultStr += '結束:'+ regResult.group(2) + '\n'
+            resultList.append(resultStr)
+        return resultList

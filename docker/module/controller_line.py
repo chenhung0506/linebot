@@ -128,13 +128,15 @@ def handle_text_message(event):
     log.info(len(data))
 
 
-    try:
-        conn = pymysql.Connect(host='us-cdbr-east-02.cleardb.com',user='bdef9ef0984947',passwd='0b65d70f',db='heroku_d38736f240fb4e6',charset='utf8')
-        dao.Database(conn).insertConversation( str(event.source.user_id), text )
-    except Exception as e:
-        log.info("insertConversation occured some error: "+utils.except_raise(e))
-    finally:
-        conn.close()
+    # try:
+    #     conn = pymysql.Connect(host='us-cdbr-east-02.cleardb.com',user='bdef9ef0984947',passwd='0b65d70f',db='heroku_d38736f240fb4e6',charset='utf8')
+    #     dao.Database(conn).insertConversation( str(event.source.user_id), text )
+    # except Exception as e:
+    #     log.info("insertConversation occured some error: "+utils.except_raise(e))
+    # finally:
+    #     conn.close()
+
+
     if text == 'tool':
         line_bot_api.reply_message(
             event.reply_token,
@@ -164,6 +166,32 @@ def handle_text_message(event):
                         ),
                         QuickReplyButton(
                             action=LocationAction(label="label6")
+                        ),
+                    ])))
+    elif text == 'bnb':
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(
+                text='選擇房間:',
+                quick_reply=QuickReply(
+                    items=[
+                        QuickReplyButton(
+                            action=PostbackAction(label="打掃", text="打掃", data="clean-room")
+                        ),
+                        QuickReplyButton(
+                            action=PostbackAction(label="全部", text="全部", data="bnb-all")
+                        ),
+                        QuickReplyButton(
+                            action=PostbackAction(label="摩斯2", text="摩斯2", data="bnb1")
+                        ),
+                        QuickReplyButton(
+                            action=PostbackAction(label="康定102", text="康定102", data="bnb2")
+                        ),
+                        QuickReplyButton(
+                            action=PostbackAction(label="康定103", text="康定103", data="bnb3")
+                        ),
+                        QuickReplyButton(
+                            action=PostbackAction(label="康定105", text="康定105", data="bnb4")
                         ),
                     ])))
     elif text == 'profile':
@@ -539,34 +567,6 @@ def handle_text_message(event):
             event.reply_token,
             message
         )
-    elif text == 'quick_reply':
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(
-                text='Quick reply',
-                quick_reply=QuickReply(
-                    items=[
-                        QuickReplyButton(
-                            action=PostbackAction(label="label1", data="data1")
-                        ),
-                        QuickReplyButton(
-                            action=MessageAction(label="label2", text="text2")
-                        ),
-                        QuickReplyButton(
-                            action=DatetimePickerAction(label="label3",
-                                                        data="data3",
-                                                        mode="date")
-                        ),
-                        QuickReplyButton(
-                            action=CameraAction(label="label4")
-                        ),
-                        QuickReplyButton(
-                            action=CameraRollAction(label="label5")
-                        ),
-                        QuickReplyButton(
-                            action=LocationAction(label="label6")
-                        ),
-                    ])))
     elif text == 'link_token' and isinstance(event.source, SourceUser):
         link_token_response = line_bot_api.issue_link_token(event.source.user_id)
         line_bot_api.reply_message(
@@ -724,6 +724,18 @@ def handle_postback(event):
     elif event.postback.data == 'date_postback':
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(text=event.postback.params['date']))
+    elif event.postback.data == 'sendemail':
+        try:
+            messageList=[]
+            messageList.append(event.message.text)
+            conn = pymysql.Connect(host='us-cdbr-east-02.cleardb.com',user='bdef9ef0984947',passwd='0b65d70f',db='heroku_d38736f240fb4e6',charset='utf8')
+            dao.Database(conn).insertConversation( event.source.user_id, json.dumps(messageList) )
+        except Exception as e:
+            log.info("insertConversation occured some error: "+utils.except_raise(e))
+        finally:
+            conn.close()
+        line_bot_api.reply_message(
+            event.reply_token, TextSendMessage(text='輸入收信人email'))
     elif event.postback.data == 'weather' or event.postback.data=='forecast':
         # 65台北 68桃園 10018新竹市 66台中 10002宜蘭
         line_bot_api.reply_message(
@@ -748,6 +760,94 @@ def handle_postback(event):
                             action=PostbackAction(label="宜蘭", data="10002:" + event.postback.data , text="宜蘭")
                         )
                     ])))
+    elif event.postback.data == 'clean-room':
+        data=[]
+        try:
+            conn = pymysql.Connect(host=const.DB_HOST,user=const.DB_ACCOUNT,passwd=const.DB_PASSWORD,db=const.DB_DB,charset='utf8')
+            data = dao.Database(conn).queryAirBnb(1)
+            log.info(len(data))
+            result = json.loads(data[0][1])
+            log.info(result)
+            if len(data) == 1:
+                data=result
+        except Exception as e:
+            log.info("query_airbnb occured some error: " + utils.except_raise(e))
+        finally:
+            try:
+                conn.close()
+            except Exception as e:
+                log.info("close connection error: " + utils.except_raise(e))
+
+        bnbNameList=[]
+        bnbUrlList=[]
+        for i in data:
+            bnbNameList.append(i.get('room_name'))
+            bnbUrlList.append(i.get('room_url'))
+        log.info(bnbNameList)
+        log.info(bnbUrlList)
+
+        resultList=service_line.lineService().getBnbRoomStatus(bnbNameList,bnbUrlList)
+        message=''
+        todayDate=datetime.strftime(datetime.now(), '%Y%m%d')
+        log.info('search data:' + todayDate)
+        for str in resultList:
+            regResult=re.search(r"(結束:"+ todayDate +"){1}",str)
+            if regResult != None:
+                message += str.split("\n")[0] + '=>' + regResult.group(1) + '\n'
+        if message == '' : message= '今日 '+ todayDate + ' 無房間需打掃'
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=message))
+    elif event.postback.data == 'bnb-all':
+        data=[]
+        try:
+            conn = pymysql.Connect(host=const.DB_HOST,user=const.DB_ACCOUNT,passwd=const.DB_PASSWORD,db=const.DB_DB,charset='utf8')
+            data = dao.Database(conn).queryAirBnb(1)
+            log.info(len(data))
+            result = json.loads(data[0][1])
+            log.info(result)
+            if len(data) == 1:
+                data=result
+        except Exception as e:
+            log.info("query_airbnb occured some error: " + utils.except_raise(e))
+        finally:
+            try:
+                conn.close()
+            except Exception as e:
+                log.info("close connection error: " + utils.except_raise(e))
+
+        bnbNameList=[]
+        bnbUrlList=[]
+        for i in data:
+            bnbNameList.append(i.get('room_name'))
+            bnbUrlList.append(i.get('room_url'))
+        log.info(bnbNameList)
+        log.info(bnbUrlList)
+
+        resultList=service_line.lineService().getBnbRoomStatus(bnbNameList,bnbUrlList)
+        testSendMessageList=[]
+        for str in resultList:
+            testSendMessageList.append(TextSendMessage(text=str))
+        line_bot_api.reply_message(event.reply_token, testSendMessageList)
+    elif event.postback.data == 'bnb1':
+        bnbNameList=["摩斯2"]
+        bnbUrlList=["https://www.airbnb.com.tw/calendar/ical/31877747.ics?s=7fd9df4c43a8cc8b991882cc97841e26"]
+        for str in service_line.lineService().getBnbRoomStatus(bnbNameList,bnbUrlList):
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=str))
+    elif event.postback.data == 'bnb2':
+        bnbNameList=["康定102"]
+        bnbUrlList=["https://www.airbnb.com.tw/calendar/ical/36770090.ics?s=eae577ab186b34518736abf944d3b53b"]
+        for str in service_line.lineService().getBnbRoomStatus(bnbNameList,bnbUrlList):
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=str))
+    elif event.postback.data == 'bnb3':
+        bnbNameList=["康定103"]
+        bnbUrlList=["https://www.airbnb.com.tw/calendar/ical/31139580.ics?s=37208479f7454e72314f0cb6fa42d431"]
+        for str in service_line.lineService().getBnbRoomStatus(bnbNameList,bnbUrlList):
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=str))
+    elif event.postback.data == 'bnb4':
+        bnbNameList=["康定105"]
+        bnbUrlList=["https://www.airbnb.com.tw/calendar/ical/27663741.ics?s=986d81e1f345327bc9e9cb4025153259"]
+        for str in service_line.lineService().getBnbRoomStatus(bnbNameList,bnbUrlList):
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=str))
+
 @handler.add(BeaconEvent)
 def handle_beacon(event):
     line_bot_api.reply_message(

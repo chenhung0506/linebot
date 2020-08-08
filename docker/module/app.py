@@ -9,8 +9,9 @@ import controller
 import controller_line
 import flask_restful
 import utils
+import unit_test
+import redis
 import service_heroku
-import dao_test
 from flask_restful import Api
 from flask_restful import Resource
 from datetime import datetime
@@ -32,8 +33,17 @@ if __name__=="__main__":
     sched.add_job(utils.setLogFileName, CronTrigger.from_crontab('59 23 * * *'))
     sched.add_job(service_heroku.resume_health_check, CronTrigger.from_crontab('5,15,25,35,45,55 * * * *'))
     sched.add_job(service_heroku.avalon_health_check, CronTrigger.from_crontab('0,10,20,30,40,50 * * * *'))
+    # r = redis.StrictRedis(host='localhost', port=6379, db=0)
+    # r.set('foo', 'test redis success')
+    # log.info(r.get('foo'))
 
     # sched.add_job(controller.transmitProcess, CronTrigger.from_crontab(const.TRANSMIT_CRON), [None])
     app.run(host="0.0.0.0", port=const.PORT, debug=True, use_reloader=False)
-    # dao_test.insertTest()
-    # dao_test.queryTest()
+
+    # test.insertTest()
+    # test.queryTest()
+    # test.insertTest()
+    # test.downloadFileTest()
+    # test.bnbTest()
+    # unit_test.insertBnbTest()
+    # unit_test.queryAirBnbTest()

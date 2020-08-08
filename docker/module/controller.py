@@ -37,10 +37,65 @@ def setup_route(api):
     api.add_resource(Weather, '/weather')
     api.add_resource(Forecast, '/forecast')
     api.add_resource(SendMail, '/sendmail')
+    api.add_resource(airbnb, '/airbnb')
 
-#localhost:8331/sendmail?receiver=chenhung0506@gmail.com&subject=這是標題&msg=這是內容
+class airbnb(Resource):
+    def get(self):
+        try:
+            conn = pymysql.Connect(host=const.DB_HOST,user=const.DB_ACCOUNT,passwd=const.DB_PASSWORD,db=const.DB_DB,charset='utf8')
+            data = dao.Database(conn).queryAirBnb(1)
+            log.info(len(data))
+            result = json.loads(data[0][1])
+            log.info(result)
+            if len(data) == 1:
+                return {'status': 200,'message': 'success','result': result}, 200
+            else:
+                return {'status': 204,'message': "no data exist"}, 204
+
+        except Exception as e:
+            log.info("query_bot_work_list occured some error: " + utils.except_raise(e))
+            return {'status': 500,'message': "[{}] {}".format(e.__class__.__name__, e.args[0])}, 500
+        finally:
+            try:
+                conn.close()
+            except Exception as e:
+                log.info("close connection error: " + utils.except_raise(e))
+                return {'status': 500,'message': "[{}] {}".format(e.__class__.__name__, e.args[0])}, 500
+
+    def post(self):
+        content_type=request.headers.get('content-type')
+        content_type=''.join( i.lower() for i  in content_type.split() )
+        log.info(content_type)
+        if content_type != 'application/json':
+            return {'status': 415,'message':'content type should be [application/json]'}, 415
+
+        receive_json=request.get_json()
+        log.info(receive_json)
+        if receive_json == None or len(receive_json)==0:
+            return {'status': 422,'message':'Error, missing necessary data'}, 422
+        for i in receive_json:
+            if i.get('room_name') == None or i.get('room_url') == None:
+                return {'status': 422,'message':'Error, missing necessary parameter [room_name] or [room_url]'}, 422
+
+        try:
+            conn = pymysql.Connect(host=const.DB_HOST,user=const.DB_ACCOUNT,passwd=const.DB_PASSWORD,db=const.DB_DB,charset='utf8')
+            update_row = dao.Database(conn).insertAirBnb( json.dumps(receive_json) )
+            log.info(update_row)
+            # # if update_row != 0:
+            return {'status': 200,'message': 'success','result': {'description': "Success, update airbnb with data:" + json.dumps(receive_json)},}, 200
+        except Exception as e:
+            log.info("query_bot_work_list occured some error: " + utils.except_raise(e))
+            return {'status': 500,'message': "[{}] {}".format(e.__class__.__name__, e.args[0])}, 500
+        finally:
+            try:
+                conn.close()
+            except Exception as e:
+                log.info("close connection error: " + utils.except_raise(e))
+                return {'status': 500,'message': "[{}] {}".format(e.__class__.__name__, e.args[0]) }, 500
+
 
 class SendMail(Resource):
+    #localhost:8331/sendmail?receiver=chenhung0506@gmail.com&subject=這是標題&msg=這是內容
     def post(self):
         args = request.get_json()
         return self.process(args)
