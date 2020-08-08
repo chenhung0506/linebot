@@ -12,5 +12,5 @@ WORKDIR /usr/src/app
 ADD dev.env /usr/src/app
 ADD ./module /usr/src/app
 RUN ls /usr/src/app
-CMD ["python", "server.py"]
+CMD ["python", "app.py"]
 # ENTRYPOINT [ "/code/test.py" ]

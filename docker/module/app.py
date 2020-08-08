@@ -10,7 +10,7 @@ import controller_line
 import flask_restful
 import utils
 import unit_test
-import redis
+# import redis
 import service_heroku
 from flask_restful import Api
 from flask_restful import Resource

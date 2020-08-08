@@ -29,7 +29,8 @@ CMD=""
 
 
 if [ $mode == "0" ]; then
-    cmd = ('docker build -t python-with-chrome -f ./build_from_image/Dockerfile .' 'docker tag python-with-chrome:latest chenhung0506/python-with-chrome' 'docker push chenhung0506/python-with-chrome:latest')
+    echo 'test'
+    # cmd = ('docker build -t python-with-chrome -f ./build_from_image/Dockerfile .' 'docker tag python-with-chrome:latest chenhung0506/python-with-chrome' 'docker push chenhung0506/python-with-chrome:latest')
 elif [ $mode == "1" ]; then
     echo "[ -------- 1.   build and run        -------- ]"
     build
