@@ -147,3 +147,7 @@ def queryAirBnbTest():
     finally:
         conn.close()
     log.info(len(data))
+
+def dateTest():
+    todayDate=datetime.strftime(datetime.now() - timedelta(days=1) , '%Y%m%d')
+    log.info('search data:' + todayDate)

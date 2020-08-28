@@ -19,42 +19,63 @@ echo "[ -------- 4.   stop module           -------- ]"
 echo "[ -------- 5.   save image            -------- ]"
 
 if [ $# -eq 1 ]; then
-    mode=$1
+    input_str=$1
 else
-    read mode
+    read input_str
 fi
 
-echo "mode:"$mode
+echo "input_str:"$input_str
 CMD=""
 
+operation() {
+    mode=$1
+    if [ $mode == "0" ]; then
+        CMD=("build_base_image")
+        for i in "${CMD[@]}";do
+            echo $i
+        done
+    elif [ $mode == "1" ]; then
+        CMD=("build" "imagePull" "dockerComposeUp")
+        for i in "${CMD[@]}";do
+            echo $i
+        done
+    elif [ $mode == "2" ]; then
+        CMD=("imagePull" "dockerComposeUp")
+        for i in "${CMD[@]}";do
+            echo $i
+        done
+    elif [ $mode == "3" ]; then
+        read -p "Enter TAG: " INPUT_TAG
+        echo "input TAG: $INPUT_TAG"
+        export TAG=$INPUT_TAG
+        CMD=("docker-compose up -d")
+    elif [ $mode == "4" ]; then
+        CMD=("docker-compose down")
+        for i in "${CMD[@]}";do
+            echo $i
+        done
+    elif [ $mode == "5" ]; then
+        CMD=("saveImage")
+    fi
+}
 
-if [ $mode == "0" ]; then
-    echo 'test'
-    # cmd = ('docker build -t python-with-chrome -f ./build_from_image/Dockerfile .' 'docker tag python-with-chrome:latest chenhung0506/python-with-chrome' 'docker push chenhung0506/python-with-chrome:latest')
-elif [ $mode == "1" ]; then
-    echo "[ -------- 1.   build and run        -------- ]"
-    build
-    imagePull
-    dockerComposeUp
-elif [ $mode == "2" ]; then
-    echo "[ -------- 2.   pull image and run   -------- ]"
-    CMD=("imagePull" "dockerComposeUp")
-elif [ $mode == "3" ]; then
-	echo "[ -------- 3.   run module           -------- ]"
-    read -p "Enter TAG: " INPUT_TAG
-    echo "input TAG: $INPUT_TAG"
-    export TAG=$INPUT_TAG
-    CMD=("docker-compose up -d")
-elif [ $mode == "4" ]; then
-	echo "[ -------- 4.   stop module          -------- ]"
-    CMD=("docker-compose down")
-elif [ $mode == "5" ]; then
-    echo "[ -------- 5.   save image           -------- ]"
-    CMD=("saveImage")
-fi
+execute_iterator(){
+    if [[ ${#input_str} > 0 ]]; then
+        input_arr=($(echo $input_str | sed  's/,/ /g'))
+        for i in "${input_arr[@]}";do
+            local res=$(operation $i)
+            res_arr=($(echo $res | sed  's/ / /g'))
+            for i in "${res_arr[@]}";do
+                echo $i && eval $i
+            done
+            # for j in "${res[@]}";do
+            #     echo "::::"
+            #     echo "::::"
+            #     echo $j && eval $j
+            # done
+        done
+    fi
+}
 
-if [[ ${#CMD} > 0 ]]; then
-    for val in "${CMD[@]}"; do
-      echo $val && eval $val
-    done
-fi
+execute_iterator
+# execute

@@ -15,6 +15,23 @@ build() {
   eval $cmd
 }
 
+build_base_image() {
+  echo "docker build -t python-with-chrome -f ./build_from_image/Dockerfile . "
+  eval "docker build -t python-with-chrome -f ./build_from_image/Dockerfile . "
+  echo "docker tag python-with-chrome:latest chenhung0506/python-with-chrome"
+  eval "docker tag python-with-chrome:latest chenhung0506/python-with-chrome"
+  echo "docker push chenhung0506/python-with-chrome:latest"
+  eval "docker push chenhung0506/python-with-chrome:latest"
+}
+
+imagePush() {
+  REPO=chenhung0506
+  CONTAINER=linebot
+  TAG=$(git rev-parse --short HEAD)
+  DOCKER_IMAGE=$REPO/$CONTAINER:$TAG
+  docker push DOCKER_IMAGE
+}
+
 imagePull() {
     TAG=$(git rev-parse --short HEAD)
     DOCKER_IMAGE=$REPO/$CONTAINER:$TAG
@@ -33,7 +50,7 @@ imagePull() {
 }
 
 dockerComposeUp() {
-  cmd="docker-compose up"
+  cmd="docker-compose up -d"
   echo $cmd
   eval $cmd
 }

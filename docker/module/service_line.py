@@ -11,6 +11,9 @@ import log as logpy
 import re
 import utils
 import requests
+import dao
+import pymysql
+import json
 
 log = logpy.logging.getLogger(__name__)
 
@@ -101,3 +104,29 @@ class lineService(object):
                         resultStr += '結束:'+ regResult.group(2) + '\n'
             resultList.append(resultStr)
         return resultList
+    
+    def getDbData(self):
+        data=[]
+        try:
+            conn = pymysql.Connect(host=const.DB_HOST,user=const.DB_ACCOUNT,passwd=const.DB_PASSWORD,db=const.DB_DB,charset='utf8')
+            data = dao.Database(conn).queryAirBnb(1)
+            log.info(len(data))
+            result = json.loads(data[0][1])
+            log.info(result)
+            if len(data) == 1:
+                data=result
+        except Exception as e:
+            log.info("query_airbnb occured some error: " + utils.except_raise(e))
+        finally:
+            try:
+                conn.close()
+            except Exception as e:
+                log.info("close connection error: " + utils.except_raise(e))
+
+        bnbNameList=[]
+        bnbUrlList=[]
+        for i in data:
+            bnbNameList.append(i.get('room_name'))
+            bnbUrlList.append(i.get('room_url'))
+
+        return bnbNameList,bnbUrlList
